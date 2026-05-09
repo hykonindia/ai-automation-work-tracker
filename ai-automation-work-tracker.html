@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hykon Team Work Tracker</title>
+<style id="main-css">
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#eceae3;color:#222;min-height:100vh}
+header{background:#1a4876;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{font-size:19px;font-weight:700}
+header .sub{font-size:13px;opacity:.8;margin-top:3px}
+.hdr-btns{display:flex;gap:10px;align-items:center}
+.readonly-banner{background:#c87800;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600}
+.btn{padding:8px 18px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-add{background:#e8f0fe;color:#1a4876}
+.btn-save{background:#fff;color:#1a4876}
+.btn-apply{background:#1a4876;color:#fff;width:100%}
+.btn-del{background:#c0392b;color:#fff;width:100%}
+.btn-cancel{background:#888;color:#fff;width:100%}
+/* summary */
+.summary{display:flex;gap:12px;padding:14px 24px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #dddbd3}
+.sbox{background:#eceae3;border-radius:8px;padding:10px 18px;text-align:center;min-width:90px}
+.sbox .num{font-size:22px;font-weight:700;color:#1a4876}
+.sbox .lbl{font-size:11px;color:#555;margin-top:2px}
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:20px 24px}
+.card{background:#fff;border:1px solid #dddbd3;border-radius:12px;padding:18px;cursor:pointer;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.id-badge{background:#1a4876;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px}
+.status-chip{font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;color:#fff;margin-left:auto}
+.card-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.card-task{font-size:13px;color:#444;line-height:1.4;margin-bottom:12px}
+.deadline-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#555;border-top:1px solid #eee;padding-top:10px;margin-bottom:10px}
+.days-pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px}
+.days-ok{background:#d1fae5;color:#065f46}
+.days-warn{background:#fef3c7;color:#92400e}
+.days-over{background:#fee2e2;color:#991b1b}
+/* task list on card */
+.task-list{border-top:1px solid #eee;padding-top:10px;margin-top:4px}
+.task-list-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.task-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f3f3f3;font-size:13px}
+.task-item:last-child{border-bottom:none}
+.task-check{width:16px;height:16px;border-radius:4px;border:2px solid #ccc;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}
+.task-check.done{background:#1e7d5e;border-color:#1e7d5e;color:#fff;font-size:10px}
+.task-text{flex:1;line-height:1.4}
+.task-text.done-text{text-decoration:line-through;color:#aaa}
+.task-due{font-size:11px;color:#888;white-space:nowrap;margin-left:4px}
+.task-due.due-warn{color:#c87800;font-weight:600}
+.task-due.due-over{color:#c0392b;font-weight:600}
+.task-progress{height:5px;background:#eee;border-radius:3px;margin-top:8px;overflow:hidden}
+.task-progress-fill{height:100%;background:#1e7d5e;border-radius:3px;transition:width .3s}
+/* overlay + panel */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50}
+.overlay.open{display:block}
+.panel{position:fixed;top:0;right:0;width:420px;max-width:100vw;height:100vh;background:#fff;z-index:51;padding:0;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.15);transform:translateX(110%);transition:transform .22s ease}
+.panel.open{transform:translateX(0)}
+.panel-inner{padding:24px}
+.panel h2{font-size:16px;font-weight:700;color:#1a4876;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #eee}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:11px;font-weight:700;color:#666;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit;color:#222}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid #1a4876;border-color:#1a4876}
+.field textarea{resize:vertical;min-height:70px}
+/* task editor inside panel */
+.section-title{font-size:12px;font-weight:700;color:#1a4876;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:16px;border-top:2px solid #eceae3}
+.task-editor-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8f8f8;border-radius:8px;margin-bottom:6px;border:1px solid #eee}
+.task-editor-check{width:18px;height:18px;border-radius:4px;border:2px solid #ccc;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.task-editor-check.done{background:#1e7d5e;border-color:#1e7d5e;color:#fff;font-size:11px}
+.task-editor-title{flex:1;font-size:13px;color:#222}
+.task-editor-title.done-text{text-decoration:line-through;color:#aaa}
+.task-editor-date{font-size:11px;color:#888;white-space:nowrap}
+.task-editor-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0}
+.task-editor-del:hover{color:#c0392b}
+.add-task-row{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:10px;background:#eceae3;border-radius:8px}
+.add-task-row input{width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit}
+.add-task-row .row2{display:flex;gap:6px}
+.add-task-row .row2 input{flex:1}
+.btn-add-task{background:#1a4876;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.panel-actions{display:flex;flex-direction:column;gap:8px;margin-top:24px;padding-top:16px;border-top:2px solid #eceae3}
+/* view modal (readonly) */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:500px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal-header{background:#1a4876;color:#fff;padding:20px 24px;border-radius:14px 14px 0 0}
+.modal-header h2{font-size:17px;font-weight:700}
+.modal-header .sub{font-size:13px;opacity:.8;margin-top:3px}
+.modal-body{padding:20px 24px}
+.modal-task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.modal-task-item:last-child{border-bottom:none}
+.modal-check{width:20px;height:20px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px}
+.modal-check.done{background:#1e7d5e;color:#fff}
+.modal-check.pending{background:#eee;color:#aaa;border:2px solid #ddd}
+.modal-task-text{flex:1}
+.modal-task-title{font-size:14px;font-weight:600;line-height:1.3}
+.modal-task-title.done-text{text-decoration:line-through;color:#aaa}
+.modal-task-due{font-size:12px;color:#888;margin-top:2px}
+.modal-close{display:block;margin:0 24px 20px;padding:10px;background:#eceae3;border:none;border-radius:8px;width:calc(100% - 48px);font-size:13px;font-weight:600;cursor:pointer;color:#444}
+.modal-close:hover{background:#dddbd3}
+/* gh modal */
+.gh-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.gh-modal-bg.open{display:flex}
+.gh-modal{background:#fff;border-radius:12px;padding:28px;width:400px;max-width:95vw}
+.gh-modal h2{font-size:16px;font-weight:700;color:#1a4876;margin-bottom:8px}
+.gh-modal p{font-size:13px;color:#666;margin-bottom:18px;line-height:1.5}
+.gh-modal-btns{display:flex;gap:10px;margin-top:18px}
+.gh-modal-btns .btn{flex:1}
+/* toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(60px);background:#1a4876;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:transform .25s,opacity .25s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+/* status colours */
+.s-not{background:#888}.s-in{background:#1a4876}.s-on{background:#1e7d5e}
+.s-risk{background:#c87800}.s-behind{background:#c0392b}.s-done{background:#145a32}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>AI Automation Team Work Tracker</h1>
+  </div>
+  <div class="hdr-btns" id="editor-controls">
+    <button class="btn btn-add" id="btn-add-intern">+ Add Member</button>
+    <button class="btn btn-save" id="btn-gh-save">Save to GitHub</button>
+  </div>
+</header>
+
+<div id="readonly-banner" style="display:none" class="readonly-banner">
+  Read-only view — contact Er. Naeem to make changes &nbsp;|&nbsp; Hykon Team Work Tracker
+</div>
+
+<div class="summary" id="summary"></div>
+<div class="grid" id="grid"></div>
+
+<!-- Edit Panel (editor only) -->
+<div class="overlay" id="overlay"></div>
+<div class="panel" id="panel">
+  <div class="panel-inner">
+    <h2 id="panel-title">Add Member</h2>
+    <div class="field"><label>Intern Name</label>
+      <input type="text" id="f-name" placeholder="e.g. Rahul Kumar">
+    </div>
+    <div class="field"><label>Main Project / Task</label>
+      <textarea id="f-task" placeholder="What is this intern working on?"></textarea>
+    </div>
+    <div class="field"><label>First Deadline</label>
+      <input type="date" id="f-deadline">
+    </div>
+    <div class="field"><label>Status</label>
+      <select id="f-status">
+        <option>Not Started</option><option>In Progress</option><option>On Track</option>
+        <option>At Risk</option><option>Behind</option><option>Complete</option>
+      </select>
+    </div>
+    <div class="field"><label>Notes / Blockers</label>
+      <textarea id="f-notes" placeholder="Any blockers or notes (optional)"></textarea>
+    </div>
+
+    <!-- Task list editor -->
+    <div class="section-title">Task List</div>
+    <div id="task-editor-list"></div>
+    <div class="add-task-row">
+      <input type="text" id="new-task-title" placeholder="Task description">
+      <div class="row2">
+        <input type="date" id="new-task-date" title="Deadline (optional)">
+        <button class="btn-add-task" id="btn-add-task">+ Add Task</button>
+      </div>
+    </div>
+
+    <div class="panel-actions">
+      <button class="btn btn-apply" id="btn-apply">Apply</button>
+      <button class="btn btn-del" id="btn-del">Delete Member</button>
+      <button class="btn btn-cancel" id="btn-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Modal (readonly card click) -->
+<div class="modal-bg" id="view-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="vm-name"></h2>
+      <div class="sub" id="vm-project"></div>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:#555">Deadline: <strong id="vm-deadline"></strong></div>
+        <span id="vm-status" class="status-chip" style="margin-left:0"></span>
+      </div>
+      <div id="vm-task-progress" style="margin-bottom:16px"></div>
+      <div id="vm-tasks"></div>
+      <div id="vm-notes" style="margin-top:12px;font-size:13px;color:#666;line-height:1.5;padding-top:12px;border-top:1px solid #eee;display:none"></div>
+    </div>
+    <button class="modal-close" id="btn-view-close">Close</button>
+  </div>
+</div>
+
+<!-- GitHub Setup Modal -->
+<div class="gh-modal-bg" id="gh-modal">
+  <div class="gh-modal">
+    <h2>Connect to GitHub</h2>
+    <p>One-time setup — your credentials stay in this browser only. Anyone with the GitHub Pages URL can view, but only you can save changes.</p>
+    <div class="field"><label>GitHub Username</label>
+      <input type="text" id="gh-owner" placeholder="e.g. naeem-hykon">
+    </div>
+    <div class="field"><label>Repository Name</label>
+      <input type="text" id="gh-repo" placeholder="e.g. hykon-trackers">
+    </div>
+    <div class="field"><label>File Path in Repo</label>
+      <input type="text" id="gh-path" value="intern-tracker.html">
+    </div>
+    <div class="field"><label>Personal Access Token</label>
+      <input type="password" id="gh-pat" placeholder="github_pat_...">
+    </div>
+    <div class="gh-modal-btns">
+      <button class="btn btn-apply" id="btn-gh-connect" style="background:#1a4876;color:#fff">Save &amp; Push</button>
+      <button class="btn btn-cancel" id="btn-gh-cancel" style="background:#888;color:#fff">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="app-data">
+[
+  {"id":"I-1","name":"Intern 1","task":"AI Sales Analytics Dashboard — Python, Streamlit, SQLite. Build dealer sales charts and automated weekly reports.","deadline":"2026-06-15","status":"Not Started","notes":"","tasks":[{"id":"T1","title":"Set up Python environment and connect to sales database","deadline":"2026-05-20","done":false},{"id":"T2","title":"Build basic sales charts for all 6 product lines","deadline":"2026-05-28","done":false},{"id":"T3","title":"Dealer ranking engine and regional map","deadline":"2026-06-08","done":false},{"id":"T4","title":"Automated weekly report email integration","deadline":"2026-06-15","done":false}]},
+  {"id":"I-2","name":"Intern 2","task":"Customer Service AI Chatbot — Python, WhatsApp API, Dialogflow. Resolve 80%+ dealer queries without human intervention.","deadline":"2026-06-15","status":"Not Started","notes":"","tasks":[{"id":"T1","title":"Bot framework setup and FAQ intent training","deadline":"2026-05-22","done":false},{"id":"T2","title":"WhatsApp API integration and test","deadline":"2026-05-30","done":false},{"id":"T3","title":"Escalation routing for unanswered queries","deadline":"2026-06-08","done":false},{"id":"T4","title":"Pilot with 5 dealers and measure resolution rate","deadline":"2026-06-15","done":false}]},
+  {"id":"I-3","name":"Intern 3","task":"Lead & Quotation Automation — Python, Google Sheets API, n8n. Auto-generate quotations in under 2 minutes.","deadline":"2026-06-15","status":"Not Started","notes":"","tasks":[{"id":"T1","title":"Lead capture workflow setup in n8n","deadline":"2026-05-22","done":false},{"id":"T2","title":"CRM integration and quotation template engine","deadline":"2026-06-01","done":false},{"id":"T3","title":"Auto-send quotations and follow-up triggers","deadline":"2026-06-10","done":false},{"id":"T4","title":"UAT — 10 live quotations under 2 minutes","deadline":"2026-06-15","done":false}]},
+  {"id":"I-4","name":"Intern 4","task":"HR & Attendance Automation — Python, OpenCV, biometric API. Cover all 480 employees across 3 units with zero manual errors.","deadline":"2026-06-15","status":"Not Started","notes":"","tasks":[{"id":"T1","title":"Biometric API connection and data pipeline","deadline":"2026-05-22","done":false},{"id":"T2","title":"Daily and weekly attendance report templates","deadline":"2026-06-01","done":false},{"id":"T3","title":"Leave tracking and payroll data export","deadline":"2026-06-08","done":false},{"id":"T4","title":"Validate zero errors across all 480 employees","deadline":"2026-06-15","done":false}]},
+  {"id":"I-5","name":"Intern 5","task":"Inventory Intelligence & Forecasting — Python, Pandas, scikit-learn. Live reorder alerts and stock-out risk dashboard.","deadline":"2026-06-15","status":"Not Started","notes":"","tasks":[{"id":"T1","title":"ERP data extraction and inventory data cleaning","deadline":"2026-05-22","done":false},{"id":"T2","title":"Baseline demand forecasting model","deadline":"2026-06-01","done":false},{"id":"T3","title":"Reorder alert system and stock-out risk scoring","deadline":"2026-06-08","done":false},{"id":"T4","title":"Dashboard accepted by Operations Head","deadline":"2026-06-15","done":false}]},
+  {"id":"I-6","name":"Intern 6","task":"Vendor & Purchase Automation — Python, ERP API, Pandas. Cut PO generation time by 50% with automated vendor comparison.","deadline":"2026-06-15","status":"Not Started","notes":"","tasks":[{"id":"T1","title":"ERP vendor module API mapping","deadline":"2026-05-22","done":false},{"id":"T2","title":"PO template engine and vendor data import","deadline":"2026-06-01","done":false},{"id":"T3","title":"Automated vendor comparison and PO generation","deadline":"2026-06-08","done":false},{"id":"T4","title":"Test with Accounts team and validate 50% time saving","deadline":"2026-06-15","done":false}]}
+]
+</script>
+
+<script id="main-js">
+var READONLY = window.location.search.indexOf('readonly') !== -1;
+var data = [];
+var editingId = null;
+var editTasks = []; // tasks being edited in panel
+var db = null;
+var DB_NAME = 'hykon-intern-v3';
+var DB_KEY = 'github';
+
+// ── Helpers ────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function statusClass(s){ var m={'Not Started':'s-not','In Progress':'s-in','On Track':'s-on','At Risk':'s-risk','Behind':'s-behind','Complete':'s-done'}; return m[s]||'s-not'; }
+function daysUntil(ds){ if(!ds) return null; var n=new Date(); n.setHours(0,0,0,0); var d=new Date(ds); d.setHours(0,0,0,0); return Math.round((d-n)/86400000); }
+function daysPill(ds){
+  var n=daysUntil(ds); if(n===null) return '';
+  if(n>14) return '<span class="days-pill days-ok">'+n+' days left</span>';
+  if(n>=0) return '<span class="days-pill days-warn">'+n+' days left</span>';
+  return '<span class="days-pill days-over">'+Math.abs(n)+' days overdue</span>';
+}
+function dueCls(ds){ var n=daysUntil(ds); if(n===null||n>7) return ''; if(n>=0) return 'due-warn'; return 'due-over'; }
+function taskId(){ return 'T'+Date.now()+''+Math.floor(Math.random()*100); }
+function showToast(msg,dur){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },dur||3000); }
+
+// ── IndexedDB ──────────────────────────────────────────────
+function openDB(){
+  return new Promise(function(res,rej){
+    var req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=function(e){ e.target.result.createObjectStore('cfg'); };
+    req.onsuccess=function(e){ db=e.target.result; res(); };
+    req.onerror=function(e){ rej(e); };
+  });
+}
+function idbGet(key){ return new Promise(function(res,rej){ var tx=db.transaction('cfg','readonly'); var req=tx.objectStore('cfg').get(key); req.onsuccess=function(e){ res(e.target.result); }; req.onerror=function(e){ rej(e); }; }); }
+function idbSet(key,val){ return new Promise(function(res,rej){ var tx=db.transaction('cfg','readwrite'); var req=tx.objectStore('cfg').put(val,key); req.onsuccess=function(){ res(); }; req.onerror=function(e){ rej(e); }; }); }
+
+// ── Render ─────────────────────────────────────────────────
+function render(){ renderSummary(); renderGrid(); }
+
+function renderSummary(){
+  var total=data.length;
+  var on=data.filter(function(d){ return d.status==='On Track'; }).length;
+  var risk=data.filter(function(d){ return d.status==='At Risk'; }).length;
+  var behind=data.filter(function(d){ return d.status==='Behind'; }).length;
+  var done=data.filter(function(d){ return d.status==='Complete'; }).length;
+  document.getElementById('summary').innerHTML=
+    sbox(total,'Team Members','')+sbox(on,'On Track','#1e7d5e')+
+    sbox(risk,'At Risk','#c87800')+sbox(behind,'Behind','#c0392b')+sbox(done,'Complete','#145a32');
+}
+function sbox(n,l,c){ return '<div class="sbox"><div class="num"'+(c?' style="color:'+c+'"':'')+'>'+n+'</div><div class="lbl">'+l+'</div></div>'; }
+
+function renderGrid(){
+  var html='';
+  data.forEach(function(d){
+    var tasks=d.tasks||[];
+    var doneCount=tasks.filter(function(t){ return t.done; }).length;
+    var pct=tasks.length?Math.round(doneCount/tasks.length*100):0;
+    var taskHtml='';
+    if(tasks.length){
+      var progressBar='<div class="task-progress"><div class="task-progress-fill" style="width:'+pct+'%"></div></div>';
+      var items=tasks.map(function(t){
+        var dc=dueCls(t.deadline);
+        return '<div class="task-item">'+
+          '<div class="task-check'+(t.done?' done':'')+'">'+( t.done?'&#10003;':'')+'</div>'+
+          '<span class="task-text'+(t.done?' done-text':'')+'">'+esc(t.title)+'</span>'+
+          (t.deadline?'<span class="task-due '+dc+'">'+t.deadline+'</span>':'')+
+        '</div>';
+      }).join('');
+      taskHtml='<div class="task-list">'+
+        '<div class="task-list-title">Tasks ('+doneCount+'/'+tasks.length+' done)</div>'+
+        progressBar+items+
+      '</div>';
+    }
+    html+='<div class="card" data-id="'+esc(d.id)+'">'+
+      '<div class="card-header">'+
+        '<span class="id-badge">'+esc(d.id)+'</span>'+
+        '<span class="status-chip '+statusClass(d.status)+'">'+esc(d.status)+'</span>'+
+      '</div>'+
+      '<div class="card-name">'+esc(d.name)+'</div>'+
+      '<div class="card-task">'+esc(d.task)+'</div>'+
+      '<div class="deadline-row">'+
+        '<span>Deadline: <strong>'+esc(d.deadline||'—')+'</strong></span>'+
+        daysPill(d.deadline)+
+      '</div>'+
+      taskHtml+
+    '</div>';
+  });
+  if(!READONLY){
+    html+='<div class="card" id="add-card" style="border:2px dashed #ccc;display:flex;align-items:center;justify-content:center;min-height:160px;color:#888;font-size:14px">+ Add Member</div>';
+  }
+  document.getElementById('grid').innerHTML=html;
+  document.getElementById('grid').querySelectorAll('.card[data-id]').forEach(function(card){
+    card.addEventListener('click',function(){ READONLY?openViewModal(card.getAttribute('data-id')):openPanel(card.getAttribute('data-id')); });
+  });
+  if(!READONLY){
+    var ac=document.getElementById('add-card');
+    if(ac) ac.addEventListener('click',function(){ openPanel(null); });
+  }
+}
+
+// ── View Modal (readonly) ──────────────────────────────────
+function openViewModal(id){
+  var d=data.find(function(x){ return x.id===id; }); if(!d) return;
+  var tasks=d.tasks||[];
+  var doneCount=tasks.filter(function(t){ return t.done; }).length;
+  var pct=tasks.length?Math.round(doneCount/tasks.length*100):0;
+  document.getElementById('vm-name').textContent=d.name+' — '+d.id;
+  document.getElementById('vm-project').textContent=d.task;
+  document.getElementById('vm-deadline').textContent=d.deadline||'—';
+  var sc=document.getElementById('vm-status');
+  sc.textContent=d.status; sc.className='status-chip '+statusClass(d.status);
+  document.getElementById('vm-task-progress').innerHTML=tasks.length?
+    '<div style="font-size:12px;color:#555;margin-bottom:6px">Task progress: '+doneCount+'/'+tasks.length+' complete ('+pct+'%)</div>'+
+    '<div style="height:8px;background:#eee;border-radius:4px;overflow:hidden"><div style="height:100%;background:#1e7d5e;width:'+pct+'%;border-radius:4px"></div></div>':'';
+  document.getElementById('vm-tasks').innerHTML=tasks.length?tasks.map(function(t){
+    return '<div class="modal-task-item">'+
+      '<div class="modal-check '+(t.done?'done':'pending')+'">'+(t.done?'&#10003;':'&ndash;')+'</div>'+
+      '<div class="modal-task-text">'+
+        '<div class="modal-task-title'+(t.done?' done-text':'')+'">'+esc(t.title)+'</div>'+
+        (t.deadline?'<div class="modal-task-due">Due: '+esc(t.deadline)+'</div>':'')+
+      '</div>'+
+    '</div>';
+  }).join(''):'<div style="color:#aaa;font-size:13px;padding:12px 0">No tasks assigned yet.</div>';
+  var notesEl=document.getElementById('vm-notes');
+  if(d.notes){ notesEl.style.display='block'; notesEl.textContent='Note: '+d.notes; } else { notesEl.style.display='none'; }
+  document.getElementById('view-modal').classList.add('open');
+}
+
+// ── Edit Panel ─────────────────────────────────────────────
+function openPanel(id){
+  editingId=id;
+  var d=id?data.find(function(x){ return x.id===id; }):null;
+  editTasks=d&&d.tasks?JSON.parse(JSON.stringify(d.tasks)):[];
+  document.getElementById('panel-title').textContent=d?'Edit — '+d.id:'Add Member';
+  document.getElementById('f-name').value=d?d.name:'';
+  document.getElementById('f-task').value=d?d.task:'';
+  document.getElementById('f-deadline').value=d?d.deadline:'2026-06-15';
+  document.getElementById('f-status').value=d?d.status:'Not Started';
+  document.getElementById('f-notes').value=d?d.notes:'';
+  document.getElementById('btn-del').style.display=d?'block':'none';
+  document.getElementById('new-task-title').value='';
+  document.getElementById('new-task-date').value='';
+  renderTaskEditor();
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('f-name').focus();
+}
+
+function closePanel(){
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  editingId=null; editTasks=[];
+}
+
+function renderTaskEditor(){
+  var html='';
+  editTasks.forEach(function(t,i){
+    html+='<div class="task-editor-item">'+
+      '<div class="task-editor-check'+(t.done?' done':'')+'\" data-idx="'+i+'">'+(t.done?'&#10003;':'')+'</div>'+
+      '<span class="task-editor-title'+(t.done?' done-text':'')+'" style="flex:1">'+esc(t.title)+'</span>'+
+      (t.deadline?'<span class="task-editor-date">'+esc(t.deadline)+'</span>':'')+
+      '<button class="task-editor-del" data-del="'+i+'">&#x2715;</button>'+
+    '</div>';
+  });
+  var el=document.getElementById('task-editor-list');
+  el.innerHTML=html;
+  el.querySelectorAll('.task-editor-check').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var i=parseInt(btn.getAttribute('data-idx'));
+      editTasks[i].done=!editTasks[i].done;
+      renderTaskEditor();
+    });
+  });
+  el.querySelectorAll('.task-editor-del').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var i=parseInt(btn.getAttribute('data-del'));
+      editTasks.splice(i,1);
+      renderTaskEditor();
+    });
+  });
+}
+
+function addTask(){
+  var title=document.getElementById('new-task-title').value.trim();
+  if(!title){ document.getElementById('new-task-title').focus(); return; }
+  editTasks.push({ id:taskId(), title:title, deadline:document.getElementById('new-task-date').value, done:false });
+  document.getElementById('new-task-title').value='';
+  document.getElementById('new-task-date').value='';
+  renderTaskEditor();
+  document.getElementById('new-task-title').focus();
+}
+
+function applyEdit(){
+  var name=document.getElementById('f-name').value.trim();
+  if(!name){ alert('Please enter an intern name.'); return; }
+  var entry={
+    name:name,
+    task:document.getElementById('f-task').value.trim(),
+    deadline:document.getElementById('f-deadline').value,
+    status:document.getElementById('f-status').value,
+    notes:document.getElementById('f-notes').value.trim(),
+    tasks:JSON.parse(JSON.stringify(editTasks))
+  };
+  if(editingId){
+    var idx=data.findIndex(function(x){ return x.id===editingId; });
+    if(idx>-1) data[idx]=Object.assign(data[idx],entry);
+  } else {
+    var nums=data.map(function(d){ return parseInt(d.id.replace('I-',''))||0; });
+    entry.id='I-'+((nums.length?Math.max.apply(null,nums):0)+1);
+    data.push(entry);
+  }
+  closePanel(); render();
+  idbGet(DB_KEY).then(function(cfg){ if(cfg) pushToGitHub(cfg,true); }).catch(function(){});
+}
+
+function deleteIntern(){
+  if(!editingId) return;
+  if(!confirm('Delete this member record?')) return;
+  data=data.filter(function(x){ return x.id!==editingId; });
+  closePanel(); render();
+}
+
+// ── GitHub ─────────────────────────────────────────────────
+function saveToGitHub(){
+  idbGet(DB_KEY).then(function(cfg){
+    if(cfg){ pushToGitHub(cfg,false); }
+    else{ document.getElementById('gh-modal').classList.add('open'); }
+  }).catch(function(){ document.getElementById('gh-modal').classList.add('open'); });
+}
+
+function saveGHConfig(){
+  var cfg={
+    owner:document.getElementById('gh-owner').value.trim(),
+    repo:document.getElementById('gh-repo').value.trim(),
+    path:document.getElementById('gh-path').value.trim()||'intern-tracker.html',
+    pat:document.getElementById('gh-pat').value.trim()
+  };
+  if(!cfg.owner||!cfg.repo||!cfg.pat){ alert('Please fill in all fields.'); return; }
+  idbSet(DB_KEY,cfg).then(function(){
+    document.getElementById('gh-modal').classList.remove('open');
+    pushToGitHub(cfg,false);
+  });
+}
+
+function pushToGitHub(cfg,silent){
+  var url='https://api.github.com/repos/'+cfg.owner+'/'+cfg.repo+'/contents/'+cfg.path;
+  var headers={'Authorization':'token '+cfg.pat,'Content-Type':'application/json'};
+  if(!silent) showToast('Pushing to GitHub…',30000);
+  fetch(url,{headers:headers})
+    .then(function(r){ return r.ok?r.json():null; })
+    .then(function(existing){
+      var html=generateHTML();
+      var body={message:'Update team work tracker',content:btoa(unescape(encodeURIComponent(html)))};
+      if(existing&&existing.sha) body.sha=existing.sha;
+      return fetch(url,{method:'PUT',headers:headers,body:JSON.stringify(body)});
+    })
+    .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+    .then(function(res){
+      if(res.ok){ showToast('Pushed to GitHub — Pages updates in ~30s'); }
+      else{ showToast('GitHub error: '+(res.j.message||'unknown'),5000); }
+    })
+    .catch(function(e){ showToast('Error: '+e.message,5000); });
+}
+
+function generateHTML(){
+  var html=document.documentElement.outerHTML;
+  html=html.replace(
+    /(<script type="application\/json" id="app-data">)[\s\S]*?(<\/script>)/,
+    '$1\n'+JSON.stringify(data,null,2)+'\n$2'
+  );
+  return '<!DOCTYPE html>\n'+html;
+}
+
+// ── Wire events ────────────────────────────────────────────
+if(!READONLY){
+  document.getElementById('btn-add-intern').addEventListener('click',function(){ openPanel(null); });
+  document.getElementById('btn-gh-save').addEventListener('click',saveToGitHub);
+  document.getElementById('btn-apply').addEventListener('click',applyEdit);
+  document.getElementById('btn-del').addEventListener('click',deleteIntern);
+  document.getElementById('btn-cancel').addEventListener('click',closePanel);
+  document.getElementById('overlay').addEventListener('click',closePanel);
+  document.getElementById('btn-add-task').addEventListener('click',addTask);
+  document.getElementById('new-task-title').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addTask(); } });
+  document.getElementById('btn-gh-connect').addEventListener('click',saveGHConfig);
+  document.getElementById('btn-gh-cancel').addEventListener('click',function(){ document.getElementById('gh-modal').classList.remove('open'); });
+} else {
+  document.getElementById('editor-controls').style.display='none';
+  document.getElementById('readonly-banner').style.display='block';
+}
+document.getElementById('btn-view-close').addEventListener('click',function(){ document.getElementById('view-modal').classList.remove('open'); });
+document.getElementById('view-modal').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
+
+// ── Boot ───────────────────────────────────────────────────
+openDB().then(function(){
+  try{ data=JSON.parse(document.getElementById('app-data').textContent); }catch(e){ data=[]; }
+  render();
+});
+</script>
+</body>
+</html>
